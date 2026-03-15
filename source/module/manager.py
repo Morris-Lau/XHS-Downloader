@@ -67,8 +67,6 @@ class Manager:
         image_download: bool,
         video_download: bool,
         live_download: bool,
-        apple_live_photo: bool,
-        local_output_path: str,
         video_preference: str,
         download_record: bool,
         folder_mode: bool,
@@ -128,8 +126,6 @@ class Manager:
         self.video_download = self.check_bool(video_download, True)
         self.video_preference = self.check_video_preference(video_preference)
         self.live_download = self.check_bool(live_download, True)
-        self.apple_live_photo = self.check_bool(apple_live_photo, False)
-        self.local_output_path = local_output_path
         self.author_archive = self.check_bool(author_archive, False)
         self.write_mtime = self.check_bool(write_mtime, False)
         self.script_server = self.check_bool(script_server, False)
