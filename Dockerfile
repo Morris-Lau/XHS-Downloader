@@ -21,6 +21,11 @@ RUN pip install --no-cache-dir --prefix="/install" -r requirements.txt
 # 使用轻量级 slim 镜像作为最终的运行环境
 FROM python:3.12-slim
 
+# 安装 ffmpeg 用于 LivePhoto 视频格式转换
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ffmpeg \
+    && rm -rf /var/lib/apt/lists/*
+
 # 设置工作目录
 WORKDIR /app
 
