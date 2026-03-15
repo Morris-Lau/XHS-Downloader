@@ -1,5 +1,6 @@
 from asyncio import Semaphore, gather
 from pathlib import Path
+from subprocess import run
 from typing import TYPE_CHECKING, Any
 
 from aiofiles import open
@@ -109,7 +110,31 @@ class Download:
             for url, name, format_ in tasks
         ]
         tasks = await gather(*tasks)
+        # 转换 LivePhoto MP4 为 MOV 格式
+        if type_ in {_("图文"), _("图集")}:
+            await self.__convert_livephoto_to_mov(path, filename, lives)
         return path, tasks  # 未解之谜
+
+    async def __convert_livephoto_to_mov(self, path: Path, name: str, lives: list):
+        """将 LivePhoto 的 MP4 视频转换为 MOV 格式"""
+        if not any(lives):
+            return
+        for i in range(1, len(lives) + 1):
+            mp4_file = path.joinpath(f"{name}_{i}.mp4")
+            if not mp4_file.exists():
+                continue
+            mov_file = path.joinpath(f"{name}_{i}.mov")
+            try:
+                result = run(
+                    ["ffmpeg", "-i", str(mp4_file), "-c", "copy", "-map_metadata", "0", str(mov_file)],
+                    capture_output=True,
+                    check=True
+                )
+                if mov_file.exists() and mov_file.stat().st_size > 0:
+                    mp4_file.unlink()
+                    logging(self.print, f"已转换为 MOV 格式: {mov_file.name}")
+            except Exception as e:
+                logging(self.print, f"转换 MOV 失败: {e}", ERROR)
 
     def __generate_path(self, nickname: str, filename: str):
         if self.author_archive:
