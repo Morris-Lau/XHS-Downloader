@@ -47,7 +47,7 @@ class Image:
         token: str,
         format_: str,
     ) -> str:
-        return f"https://ci.xiaohongshu.com/{token}?imageView2/format/{format_}"
+        return f"https://ci.xiaohongshu.com/{token}"
 
     @staticmethod
     def __extract_image_token(url: str) -> str:

@@ -129,7 +129,7 @@ class XHS:
         image_format="JPEG",
         image_download=True,
         video_download=True,
-        live_download=False,
+        live_download=True,
         video_preference="resolution",
         folder_mode=False,
         download_record=True,
@@ -784,11 +784,20 @@ class XHS:
                 功能：输入小红书作品链接，下载作品文件，默认不返回作品信息数据。
                 参数：
                 - url（必填）：小红书作品链接
-                - index（选填）：根据用户指定的图片序号（如用户说“下载第1和第3张”时，index应为 [1, 3]），生成由所需图片序号组成的列表；如果用户未指定序号，则该字段为 None
+                - index（选填）：根据用户指定的图片序号（如用户说"下载第1和第3张"时，index应为 [1, 3]），生成由所需图片序号组成的列表；如果用户未指定序号，则该字段为 None
                 - return_data（可选）：是否返回作品信息数据；如需返回作品信息数据，设置此参数为 true，默认值为 false
                 返回：
                 - message：结果提示
                 - data：作品信息数据，不需要返回作品信息数据时固定为 None
+
+                fetch_and_download
+                功能：输入小红书作品链接，同时获取作品信息数据并下载作品文件。这是 get_detail_data 和 download_detail 的组合功能，始终返回作品信息数据。
+                参数：
+                - url（必填）：小红书作品链接
+                - index（选填）：指定需要下载的图文作品序号
+                返回：
+                - message：结果提示
+                - data：作品信息数据（始终返回）
                 """),
             version=__VERSION__,
         )
@@ -908,6 +917,62 @@ class XHS:
                     }
                 case _:
                     raise ValueError
+
+        @mcp.tool(
+            name="fetch_and_download",
+            description=dedent("""
+                功能：输入小红书作品链接，同时获取作品信息数据并下载作品文件。
+                这是 get_detail_data 和 download_detail 的组合功能。
+                
+                参数：
+                url（必填）：小红书作品链接，格式如：
+                - https://www.xiaohongshu.com/explore/...
+                - https://www.xiaohongshu.com/discovery/item/...
+                - https://xhslink.com/...
+                index（选填）：根据用户指定的图片序号（如用户说"下载第1和第3张"时，index应为 [1, 3]），生成由所需图片序号组成的列表；如果用户未指定序号，则该字段为 None
+                
+                返回：
+                - message：结果提示
+                - data：作品信息数据（始终返回）
+                """),
+            tags={
+                "小红书",
+                "XiaoHongShu",
+                "RedNote",
+                "Download",
+                "下载",
+                "获取数据",
+            },
+            annotations={
+                "title": "获取并下载小红书作品",
+                "readOnlyHint": False,
+                "destructiveHint": False,
+                "idempotentHint": True,
+                "openWorldHint": True,
+            },
+        )
+        async def fetch_and_download(
+            url: Annotated[str, Field(description=_("小红书作品链接"))],
+            index: Annotated[
+                list[str | int] | None,
+                Field(default=None, description=_("指定需要下载的图文作品序号")),
+            ],
+        ) -> dict:
+            msg, data = await self.deal_detail_mcp(
+                url,
+                True,
+                index,
+            )
+            if data:
+                return {
+                    "message": msg + ", " + _("作品文件下载任务执行完毕"),
+                    "data": data,
+                }
+            else:
+                return {
+                    "message": msg + ", " + _("作品文件下载任务未执行"),
+                    "data": None,
+                }
 
         await mcp.run_async(
             transport=transport,
