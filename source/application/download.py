@@ -174,10 +174,18 @@ class Download:
         if not self.image_download:
             logging(self.print, _("图文作品下载功能已关闭，跳过下载"))
             return tasks
-        for i, j in enumerate(zip(urls, lives), start=1):
-            if index and i not in index:
+        # 使用 zip 同时遍历图片和动图，保持帖子位置索引对齐
+        for post_index, (img_url, live_url) in enumerate(zip(urls, lives), start=1):
+            if index and post_index not in index:
                 continue
-            file = f"{name}_{i}"
+            # 文件名格式: {作品名}_{帖子位置索引:02d}
+            # post_index 就是素材在帖子中的位置（1-based）
+            file = f"{name}_{post_index:02d}"
+            
+            # 添加调试信息
+            logging(self.print, f"准备下载: 位置{post_index}, 图片={img_url is not None}, 动图={live_url is not None}")
+            
+            # 图片下载任务
             if not any(
                 self.__check_exists_path(
                     path,
@@ -185,17 +193,21 @@ class Download:
                 )
                 for s in self.image_format_list
             ):
-                tasks.append([j[0], file, self.image_format])
+                tasks.append([img_url, file, self.image_format])
+            
+            # 动图下载任务（如果存在）
             if (
                 not self.live_download
-                or not j[1]
+                or not live_url
                 or self.__check_exists_path(
                     path,
                     f"{file}.{self.live_format}",
                 )
             ):
                 continue
-            tasks.append([j[1], file, self.live_format])
+            # 动图使用与图片相同的文件名（序号对齐）
+            tasks.append([live_url, file, self.live_format])
+            logging(self.print, f"  -> 动图配对: {file}.mov 对应 {file}.{self.image_format}")
         return tasks
 
     def __check_exists_glob(
